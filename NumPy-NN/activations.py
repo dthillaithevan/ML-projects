@@ -80,10 +80,38 @@ class Sigmoid(Module):
         return self.grad_a
 
 
+class Softmax(Module):
+    """Stable Softmax layer:
+    m = max(x)
+    a = (e^(x-m)/sum(e^(x-m)))"""
+
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__(name="Softmax")
+        self.x = None
+        self.grad_a = None
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        """a = (e^(x)/sum(e^(x)))"""
+        self.x = x
+        m = np.max(x, axis=1)
+        exp = np.exp(x - m)
+        self.a = exp / np.sum(exp, axis=1)
+        return self.a
+
+    def backprop(self, grad_output: np.ndarray) -> np.ndarray:
+        """d(a)/dx = a*(II - a), where II = Kroneker delta"""
+        ii = np.eye(self.x.shape[1])
+        self.grad_a = self.a[:, None] * (ii - self.a[:, None]) * grad_output
+        return self.grad_a
+
+
 DEFAULT_ACTIVATION = Relu
 ACTIVATIONS = {
     "ReLu": Relu,
     None: DEFAULT_ACTIVATION,
     "Identity": Identity,
     "Sigmoid": Sigmoid,
+    "Softmax": Softmax,
 }
