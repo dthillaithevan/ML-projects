@@ -95,9 +95,9 @@ class Softmax(Module):
     def forward(self, x: np.ndarray) -> np.ndarray:
         """a = (e^(x)/sum(e^(x)))"""
         self.x = x
-        m = np.max(x, axis=1)
+        m = np.max(x, axis=1, keepdims=True)
         exp = np.exp(x - m)
-        self.a = exp / np.sum(exp, axis=1)
+        self.a = exp / np.sum(exp, axis=1, keepdims=True)
         return self.a
 
     def backprop(self, grad_output: np.ndarray) -> np.ndarray:
