@@ -100,40 +100,46 @@ class BinaryCrossEntropy(Loss):
         return grads
 
 
-# class CrossEntropy(Loss):
-#     def __init__(
-#         self,
-#     ):
-#         super().__init__()
+class CrossEntropy(Loss):
+    def __init__(
+        self,
+    ):
+        super().__init__()
 
-#     def forward(self, y_pred: np.ndarray, y: np.ndarray) -> float:
-#         """  """
-#         # self.y = y
-#         # self.y_pred = y_pred
-#         # return  -np.sum(y * np.log(y_pred) + (1-y)*np.log(1-y_pred), axis = 1)/y_pred.shape[0]
-#         # # return -np.sum(y * np.log(y_pred), axis = 1)
+    def forward(
+        self,
+        y_pred: np.ndarray,
+        y: np.ndarray,
+        integration_method: str = "sum",
+        epsilon: float = 1e-10,
+    ) -> float:
+        """sum(y * log(y_pred)), note y_pred should be Softmax outputs!"""
 
-#     def grad(self, ) -> np.ndarray:
-#         """ """
-#         # return -((self.y/self.y_pred)  - (1 - self.y)/(1-self.y_pred))
+        self.y = y
+        # Clip to avoid log(0)
+        self.y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+
+        self.integration_method = integration_method
+
+        loss = -np.sum(y * np.log(y_pred), axis=1)
+
+        # Apply integration
+        if self.integration_method == "sum":
+            return np.sum(loss)
+        elif self.integration_method == "mean":
+            return np.mean(loss)
+        else:
+            raise ValueError
+
+    def grad(self, y_pred: np.ndarray) -> np.ndarray:
+        """dL/da = y_pred / y"""
+
+        grad = -(self.y / y_pred)
+
+        if self.integration_method == "mean":
+            grad = grad / y_pred.shape[0]
+
+        return grad
 
 
-# class LogLikelihood(Loss):
-#     """ Log Likelihood Lossfunction
-
-#     L = -[ y*log(y_pred) + (1-y)*log(1-y_pred) ]
-
-#     """
-#     def __init__(
-#         self,
-#     ):
-#         super().__init__()
-
-#     def forward(self, y_pred: np.ndarray, y: np.ndarray) -> float:
-#         """Expects y_pred.shape = (samples, predictions)"""
-#         self.y = y
-#         return - np.sum(y * np.log(y_pred) + (1-y)*np.log(1-y_pred), axis = 1)/y_pred.shape[0]
-
-#     def grad(self, x: np.ndarray) -> np.ndarray:
-#         """dL/da = a for L2 norm"""
-#         return x - self.y
+LOSS = {"L2": L2, "BCE": BinaryCrossEntropy, "CE": CrossEntropy}
