@@ -103,7 +103,10 @@ class Softmax(Module):
     def backprop(self, grad_output: np.ndarray) -> np.ndarray:
         """d(a)/dx = a*(II - a), where II = Kroneker delta"""
         ii = np.eye(self.x.shape[1])
-        self.grad_a = self.a[:, None] * (ii - self.a[:, None]) * grad_output
+        jacobian = np.einsum("bi,ij->bij", self.a, ii) - np.einsum(
+            "bi,bj->bij", self.a, self.a
+        )
+        self.grad_a = np.einsum("bij,bj->bi", jacobian, grad_output)
         return self.grad_a
 
 
