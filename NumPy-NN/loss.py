@@ -58,21 +58,46 @@ class BinaryCrossEntropy(Loss):
     ):
         super().__init__()
 
-    def forward(self, y_pred: np.ndarray, y: np.ndarray) -> float:
+    def forward(
+        self,
+        y_pred: np.ndarray,
+        y: np.ndarray,
+        integration_method: str = "sum",
+        epsilon: float = 1e-10,
+    ) -> float:
         """L = -[ y*log(y_pred) + (1-y)*log(1-y_pred) ]"""
         self.y = y
-        self.y_pred = y_pred
-        return (
-            -np.sum(y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred), axis=1)
-            / y_pred.shape[0]
+        self.integration_method = integration_method
+
+        # Clip to avoid log(0)
+        self.y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+
+        # Loss function
+        l = (
+            -np.sum(y * np.log(self.y_pred) + (1 - y) * np.log(1 - self.y_pred), axis=1)
+            / self.y_pred.shape[1]
         )
-        # return -np.sum(y * np.log(y_pred), axis = 1)
+
+        # Apply integration
+        if self.integration_method == "sum":
+            return np.sum(l)
+        elif self.integration_method == "mean":
+            return np.mean(l)
+        else:
+            raise ValueError
 
     def grad(
         self,
+        y_pred: np.ndarray,
     ) -> np.ndarray:
-        """dL/da = y_pred - y"""
-        return -((self.y / self.y_pred) - (1 - self.y) / (1 - self.y_pred))
+        """dL/da = -y/y_pred + (1-y)/(1-y_pred)"""
+
+        grads = -((self.y / y_pred) - (1 - self.y) / (1 - y_pred))
+
+        if self.integration_method == "mean":
+            grads /= y_pred.shape[0]
+
+        return grads
 
 
 # class CrossEntropy(Loss):
