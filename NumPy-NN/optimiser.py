@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 
 
 class Optimiser(ABC):
+    """Abstract Optimizer class"""
+
     def __init__(self, model: NN):
         self.iteration = 0
 
@@ -125,67 +127,3 @@ class Adam(Optimiser):
 
 
 OPTIMIZERS = {"Adam": Adam, "GradientDescent": GradientDescent}
-
-
-# if __name__ == "__main__":
-
-#     n_in = 2
-#     n_out = 2
-#     samples = 2
-#     X = np.ones((samples, n_in))
-#     X[0] = 0
-#     Y = np.ones((samples, n_out))
-#     Y[1] = 0
-#     layer_sizes = [(n_in, 3), (3, n_out)]
-#     nn = NN(layer_sizes)
-#     l2_loss = L2()
-
-#     # nn.run_finite_difference(X, l2_loss, Y)
-
-#     beta_1, beta_2 = 0.9, 0.999
-#     alpha = 0.5
-#     adam = Adam(nn, learning_rate=alpha, beta_1 = beta_1, beta_2 = beta_2)
-
-#     learnable_params = nn.get_learnable_param_names
-#     v = {}
-#     m = {}
-
-#     for i in range(nn.N):
-#         for n in learnable_params[i]:
-#             v[f"{n}_{i}"] = 0
-#             m[f"{n}_{i}"] = 0
-
-#     v_ = v.copy()
-#     m_ = m.copy()
-
-#     max_iter = 100
-#     t = 0
-
-#     for t in range(1, max_iter + 1):
-#         pred = nn(X)
-#         loss = l2_loss(pred, Y)
-#         print(loss)
-#         nn.backprop(l2_loss)
-#         adam.step()
-
-# params = nn.get_learnable_params
-# params_list = list(params.values())
-# params_grad = nn.get_param_gradients
-# params_new = {}
-
-# # Compute momentum and RMS term
-# for n in v.keys():
-#     m[n] = m[n] * beta_1 + beta_1_inv * params_grad[n]
-#     v[n] = v[n] * beta_2 + beta_2_inv * params_grad[n]**2
-
-#     # Bias correction
-#     m_[n] = m[n] / (1 - beta_1**t)
-#     v_[n] = v[n] / (1 - beta_2**t)
-
-#     params_new[n] = params[n] - alpha * m_[n] / ((v_[n] + eps) ** 0.5)
-
-# # for n in params_grad.keys():
-# #     params_new[n] = params[n] - alpha*params_grad[n]
-
-# # Apply params back to NN
-# nn.update_weights(params_new)
