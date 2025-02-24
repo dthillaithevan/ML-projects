@@ -89,10 +89,15 @@ class BinaryCrossEntropy(Loss):
     def grad(
         self,
         y_pred: np.ndarray,
+        epsilon: float = 1e-10,
     ) -> np.ndarray:
         """dL/da = -y/y_pred + (1-y)/(1-y_pred)"""
 
-        grads = -((self.y / y_pred) - (1 - self.y) / (1 - y_pred))
+        y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+
+        grads = -(self.y / self.y_pred) + ((1 - self.y) / (1 - self.y_pred))
+
+        grads /= y_pred.shape[1]
 
         if self.integration_method == "mean":
             grads /= y_pred.shape[0]
@@ -143,3 +148,23 @@ class CrossEntropy(Loss):
 
 
 LOSS = {"L2": L2, "BCE": BinaryCrossEntropy, "CE": CrossEntropy}
+
+# if __name__ == '__main__':
+
+#     n = 10
+#     y_pred = np.random.rand(10, 2)
+#     y = np.random.randint(0, 2, size=(10, 2))
+
+
+#     bce = BinaryCrossEntropy()
+
+#     l = bce(y_pred, y, 'mean')
+#     g = bce.grad(y_pred)
+
+#     delta = 1e-04
+#     y_pred[0,0] += delta
+
+
+#     l2 = bce(y_pred, y, 'mean')
+
+#     print (g[0,0], (l2-l)/delta)
