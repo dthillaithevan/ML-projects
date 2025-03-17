@@ -9,6 +9,7 @@ Implenting NN from scratch using NumPy for my own benefit.
 This file defines modules that make up a Neural Network
 """
 from activations import ACTIVATIONS
+from intialisations import INITIALISATIONS
 from nn_module import Module
 import numpy as np
 
@@ -17,7 +18,12 @@ class Linear(Module):
     """Linear layer"""
 
     def __init__(
-        self, n_in: int, n_out: int, random_seed: int = 1234, name: str = None
+        self,
+        n_in: int,
+        n_out: int,
+        random_seed: int = 1234,
+        name: str = None,
+        initialisation: str = None,
     ) -> None:
 
         super().__init__(name)
@@ -29,7 +35,10 @@ class Linear(Module):
         np.random.seed(random_seed)
 
         # Weights
-        W = np.random.normal(size=(n_in, n_out)) * np.sqrt(2.0 / n_in)
+        if initialisation is None:
+            W = np.random.normal(size=(n_in, n_out)) * np.sqrt(2.0 / n_in)
+        else:
+            W = INITIALISATIONS[initialisation](n_in, n_out)
         # Biases
         b = np.zeros((n_out,), dtype=np.float32)
 
@@ -104,14 +113,29 @@ class Layer(Module):
     """Single Layer: Linear + activation"""
 
     def __init__(
-        self, n_in: int, n_out: int, activation: str = "ReLu", name: str = "layer"
+        self,
+        n_in: int,
+        n_out: int,
+        activation: str = "ReLu",
+        name: str = "layer",
+        initialisation: str = None,
+        seed: int = 1234,
     ):
         super().__init__(name)
         assert activation in ACTIVATIONS
 
-        seed = 123
+        if initialisation is not None:
+            if initialisation.lower() == "xavier":
+                # Dont use Xavier with relu
+                assert activation.lower() != "relu"
 
-        self.linear = Linear(n_in, n_out, random_seed=seed, name=name + "_linear")
+        self.linear = Linear(
+            n_in,
+            n_out,
+            random_seed=seed,
+            initialisation=initialisation,
+            name=name + "_linear",
+        )
 
         self.activation = ACTIVATIONS[activation]()
 
