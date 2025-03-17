@@ -60,9 +60,14 @@ class Dataset:
 
 
 def load_CIFAR() -> dict:
-    test = unpickle(f"{CIFAR_PATH}/test")
-    train = unpickle(f"{CIFAR_PATH}/train")
-    meta = unpickle(f"{CIFAR_PATH}/meta")
+    try:
+        test = unpickle(f"{CIFAR_PATH}/test")
+        train = unpickle(f"{CIFAR_PATH}/train")
+        meta = unpickle(f"{CIFAR_PATH}/meta")
+    except:
+        raise FileNotFoundError(
+            "Download CIFAR-100 dataset from https://www.cs.toronto.edu/~kriz/cifar.html and place it in ./datasets"
+        )
 
     out = {"test": test, "train": train, "meta": meta}
 
