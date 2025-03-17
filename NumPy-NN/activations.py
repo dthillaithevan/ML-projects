@@ -68,10 +68,27 @@ class Sigmoid(Module):
         self.x = None
         self.grad_a = None
 
+    # Avoiding overflow, adapted from: https://stackoverflow.com/questions/51976461/optimal-way-of-defining-a-numerically-stable-sigmoid-function-for-a-list-in-pyth
+    def _pos_sig(self, x: np.ndarray):
+        return 1 / (1 + np.exp(-x))
+
+    def _neg_sigmoid(self, x: np.ndarray):
+        exp = np.exp(x)
+        return exp / (exp + 1)
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """a = 1/(1 + e^-x)"""
         self.x = x
-        self.a = 1 / (1 + np.exp(-x))
+
+        self._pos = self.x >= 0
+        self._neg = ~self._pos
+
+        self.a = np.zeros_like(x, dtype=x.dtype)
+        self.a[self._pos] = self._pos_sig(x[self._pos])
+        self.a[self._neg] = self._pos_sig(x[self._neg])
+
+        # self.a = 1 / (1 + np.exp(-x))
+
         return self.a
 
     def backprop(self, grad_output: np.ndarray) -> np.ndarray:
