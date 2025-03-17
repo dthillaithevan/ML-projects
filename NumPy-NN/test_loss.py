@@ -44,10 +44,8 @@ def central_difference(
             f_minus = loss_obj.forward(x_minus, y)
         elif input_name in ("BCE", "CE"):
             # For BCE and CE, forward takes (y_pred, y, integration_method)
-            f_plus = loss_obj.forward(x_plus, y, integration_method=integration_method)
-            f_minus = loss_obj.forward(
-                x_minus, y, integration_method=integration_method
-            )
+            f_plus = loss_obj.forward(x_plus, y)
+            f_minus = loss_obj.forward(x_minus, y)
         else:
             raise ValueError("Unknown loss type")
 
@@ -102,7 +100,7 @@ def test_ce_grad() -> None:
     """
     from activations import Softmax
 
-    loss = CrossEntropy()
+    loss = CrossEntropy(apply_softmax=True, integration_method="sum")
     softmax = Softmax()
 
     logits = np.random.randn(3, 4)
@@ -114,7 +112,7 @@ def test_ce_grad() -> None:
         y[i, np.random.randint(0, 4)] = 1
 
     # Run forward pass.
-    _ = loss.forward(y_pred, y, integration_method="sum")
+    _ = loss.forward(y_pred, y)
     grad_analytic: np.ndarray = loss.grad(y_pred)
 
     # Check gradints
@@ -123,7 +121,6 @@ def test_ce_grad() -> None:
     ), "Gradient shape mismatch for Cross Entropy loss."
 
     # Central diff
-    grad_numeric = central_difference(
-        loss, y_pred, y, input_name="CE", integration_method="sum"
-    )
+    grad_numeric = central_difference(loss, y_pred, y, input_name="CE")
+
     np.testing.assert_allclose(grad_numeric, grad_analytic, rtol=RTOL, atol=ATOL)
