@@ -10,6 +10,7 @@ This file defines Loss functions
 """
 from abc import ABC, abstractmethod
 import numpy as np
+from activations import Softmax
 
 
 class Loss(ABC):
@@ -34,6 +35,9 @@ class Loss(ABC):
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
+
+    def clip(self, x: np.ndarray, epsilon: float = 1e-10) -> np.ndarray:
+        return np.clip(x, epsilon, 1 - epsilon)
 
 
 class L2(Loss):
@@ -108,25 +112,34 @@ class BinaryCrossEntropy(Loss):
 class CrossEntropy(Loss):
     def __init__(
         self,
+        integration_method: str = "sum",
+        apply_softmax: bool = False,  # Whether to apply softmax before CE
     ):
+        self.integration_method = integration_method
+        self.apply_softmax = apply_softmax
         super().__init__()
+
+        if self.apply_softmax:
+            self._softmax = Softmax()
 
     def forward(
         self,
         y_pred: np.ndarray,
         y: np.ndarray,
-        integration_method: str = "sum",
         epsilon: float = 1e-10,
     ) -> float:
         """sum(y * log(y_pred)), note y_pred should be Softmax outputs!"""
+        self.epsilon = epsilon
 
         self.y = y
-        # Clip to avoid log(0)
-        self.y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
 
-        self.integration_method = integration_method
+        if self.apply_softmax:
+            self.y_softmax = self._softmax(y_pred)
+            self.y_pred = self.clip(self.y_softmax, epsilon)
+        else:
+            self.y_pred = self.clip(y_pred, epsilon)
 
-        loss = -np.sum(y * np.log(y_pred), axis=1)
+        loss = -np.sum(y * np.log(self.y_pred), axis=1)
 
         # Apply integration
         if self.integration_method == "sum":
@@ -136,13 +149,18 @@ class CrossEntropy(Loss):
         else:
             raise ValueError
 
-    def grad(self, y_pred: np.ndarray) -> np.ndarray:
+    def grad(self, *args) -> np.ndarray:
         """dL/da = y_pred / y"""
 
-        grad = -(self.y / y_pred)
+        # y_pred = self.clip(y_pred, self.epsilon)
+
+        grad = -(self.y / self.y_pred)
 
         if self.integration_method == "mean":
-            grad = grad / y_pred.shape[0]
+            grad = grad / self.y_pred.shape[0]
+
+        if self.apply_softmax:
+            grad = self._softmax.backprop(grad)
 
         return grad
 
