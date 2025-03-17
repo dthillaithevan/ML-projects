@@ -22,6 +22,7 @@ class NN(Module):
         self,
         layer_sizes: list[tuple],
         activations: str | list[str] = None,
+        initialisations: list[str] | str = None,
     ):
         super().__init__()
 
@@ -41,27 +42,34 @@ class NN(Module):
             else:
                 activations = [activations] * self.N
 
-        self._init_NN(layer_sizes, activations)
+        self._init_NN(layer_sizes, activations, initialisations)
 
         # Keep track of whether gradients exist
         self._grads_exist = False
 
         # self.num_learnable_params = self.get_num_learnable_params
 
-    def _init_NN(self, layer_sizes: list[tuple], activations: list[str]) -> None:
+    def _init_NN(
+        self,
+        layer_sizes: list[tuple],
+        activations: list[str],
+        initialisations: list[str] | str = None,
+    ) -> None:
         self.model = {}
         self.model_size = {}
+        if not isinstance(initialisations, list):
+            initialisations = [initialisations] * self.N
+        else:
+            assert len(initialisations) == self.N
         # self.activation_names = activations
         for i in range(self.N):
             self.model[f"layer_{i}"] = Layer(
-                *layer_sizes[i], name=f"layer_{i}", activation=activations[i]
+                *layer_sizes[i],
+                name=f"layer_{i}",
+                activation=activations[i],
+                initialisation=initialisations[i],
             )
             self.model_size[f"layer_{i}"] = layer_sizes[i]
-
-        # # Final layer is without activation (identity)
-        # i += 1
-        # self.model[f"layer_{i}"] =  Layer(*layer_sizes[i], activation = 'Identity', name = f'layer_{i}')
-        # self.model_size[f"layer_{i}"] = layer_sizes[i]
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         for i in range(self.N):
