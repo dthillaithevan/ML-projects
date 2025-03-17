@@ -159,3 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .DS_Store
+NumPy-NN/datasets/cifar-100-python/test
+NumPy-NN/datasets/cifar-100-python/file.txt~
+NumPy-NN/datasets/cifar-100-python/meta
+NumPy-NN/datasets/cifar-100-python/train
